@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+  <!-- 아래의 설정은 mapper.xml에서 resultType,parameterType를 정할 때 패키지를 지정해 주는 것이다
+  아래와 같이 작성해놓으면 클래스 명만 입력해주면 된다. -->
+<configuration>
+	<typeAliases>
+		<package  name="org.zerock.domain"/>
+	</typeAliases>
+</configuration>
