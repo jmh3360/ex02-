@@ -70,6 +70,7 @@ public class ReplyController {
 	}
 	@RequestMapping(value = "/{rno}",method = {RequestMethod.DELETE})
 	public ResponseEntity<String> remove(@PathVariable("rno") Integer rno){
+		System.out.println("Delete ==================================================="+rno);
 		ResponseEntity<String> entity = null;
 		try {
 			service.removeReply(rno);

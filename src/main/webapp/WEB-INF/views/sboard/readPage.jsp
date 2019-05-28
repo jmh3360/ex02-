@@ -50,8 +50,8 @@
 					</div>
  				</div>
  				<div class="box-footer">
- 					<button type="submit" class="btn btn-warning">Modify</button>
- 					<button type="submit" class="btn btn-danger">REMOVE</button>
+ 					<button type="submit" class="btn btn-warning list">Modify</button>
+ 					<button type="submit" class="btn btn-danger list">REMOVE</button>
  					<button type="submit" class="btn btn-primary list">GO LIST</button>
  				</div>
  				<!-- The Time line -->
@@ -66,6 +66,25 @@
  					<ul id="pagination" class="pagination pagination-sm no-margin">
  					</ul>
  				</div>
+ 				<!-- Modal -->
+				<div id="modifyModal" class="modal modal-primary fade" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title"></h4>
+							</div>
+							<div class="modal-body" data-rno>
+							<p><input type="text" id="replytext" class="form-control" /></p>
+							</div>
+							<div class="modal-footer">
+								<button class="btn btn btn-info" id="replyModBtn">Modify</button>
+								<button class="btn btn-danger" id="modifyDelBtn">DELETE</button>
+								<button class="btn btn-default" data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div> 					
 				<form role="form" action="modifyPage" method="post">
 					<input type="hidden" name="bno" value='${boardVO.bno}' />
 					<input type="hidden" name="page" value='${cri.page}' />
@@ -80,42 +99,100 @@
  <script id="template" type="text/x-handlerbars-template">
 		  {{#each .}}
       <li class="replyLi" data-rno={{rno}}>
-        <i className="fa fa-comments bg-blue"></i>
-        <div className="timeline-item">
-          <span className="time">
-            <i className="fa fa-clock-o"></i>{{prettifyDate regdate}}
+        <i class="fa fa-comments bg-blue"></i>
+        <div class="timeline-item">
+          <span class="time">
+            <i class="fa fa-clock-o"></i>{{prettifyDate regdate}}
           </span>
-          <h3 className="timeline-header">
+          <h3 class="timeline-header">
             <strong>{{rno}}</strong>
             -{{replyer}}
           </h3>
-          <div className="timeline-body">{{replytext}}</div>
-          <div className="timeline-footer">
-            <a className="btn btn-primary btn-xs" data-toggle="modal" data-target="#modifyModal">Modify</a>
+          <div class="timeline-body">{{replytext}}</div>
+          <div class="timeline-footer">
+            <a class="btn btn-primary btn-xs" data-toggle="modal" data-target="#modifyModal">Modify</a>
           </div>
         </div>
       </li>	
       {{/each}}
 </script>
  <script>
- 	
 	 var bno =${boardVO.bno};
 	 var replyPage = 1;
+	 $("#replymodBtn").click(function(){
+		 var rno = $(".modal-title").html();
+		 var replytext = $("#replytext").val();
+	 });
+	 $(function(){
+		 $(".timeline").on('click','.replyLi',function(){
+			var reply = $(this);
+			console.log(reply);
+			console.log(reply.find('.timeline-body').text());
+			
+			$('#replytext').val(reply.find('.timeline-body').text());
+			$('.modal-title').html(reply.attr('data-rno'));
+		 });
+	 });
+	 $("#replyModBtn").click(function(){
+		 var rno = $(".modal-title").html();
+		 var replytext = $("#replytext").val();
+		 var replyPage = document.getElementById("pagination").querySelector('.active a').innerHTML;
+		 
+		 $.ajax({
+			 type:'put',
+			 url:'/replies/'+rno,
+			 headers : {
+				 "Content-Type" : "application/json",
+				 "X-HTTP-Method-Override":"PUT"
+			 },
+		 data:JSON.stringify({replytext:replytext}),
+		 dataType:'text',
+		 success:function(result){
+			 console.log("result : "+result);
+			 if (result == "SUCCESS") {
+				alert("수정  되었습니다.");
+				getPage("/replies/"+bno+"/"+replyPage);
+			}
+		 }
+		 });
+		 
+	 });
+	 
+	 $("#modifyDelBtn").click(function(){
+		 var rno = $(".modal-title").html();
+		 var replytext = $("#replytext").val();
+		 var replyPage = document.getElementById("pagination").querySelector('.active a').innerHTML;
+		 
+		 $.ajax({
+			 type:'delete',
+			 url:'/replies/'+rno,
+			 headers : {
+				 "Content-Type" : "application/json",
+				 "X-HTTP-Method-Override":"DELETE"
+			 },
+		 dataType:'text',
+		 success:function(result){
+			 console.log("result : "+result);
+			 if (result == "SUCCESS") {
+				alert("삭제  되었습니다.");
+				getPage("/replies/"+bno+"/"+replyPage);
+			}
+		 }
+		 });
+ });
 	 $("#repliesDiv").on('click',function(){
 		 if ($('.timeline li').size() > 1) return;
 		 getPage("/replies/"+bno+"/1");
 	 });
-	 $('.pagination').on('click',"li a",function(e){
+	 $(".pagination").on('click',"li a",function(e){
 		 e.preventDefault();
 		 replyPage = $(this).attr("href");
 		 getPage("/replies/"+bno+"/"+replyPage);
 	 });
 	 $('#replyAddBtn').click(function(e){
 		 e.preventDefault();
-		 alert("왜 형 빡치게하니  또?");
 		 var replyerObj = $('#newReplyWriter');
 		 var replytextObj = $('#newReplyText');
-		 console.log(replytextObj.value);
 		 var replyer = replyerObj.val();
 		 var replytext = replytextObj.val();
 		 console.log("replyText 잘 들어 왔니?"+replytextObj.val());
@@ -141,6 +218,7 @@
 		 });
 		 
 	 });
+	 
 	 function getPage(pageInfo){
 		 $.getJSON(pageInfo,function(data){
 			 printData(data.list,$('#repliesDiv'),$('#template'));
@@ -149,8 +227,7 @@
 			 $('#modifyModal').modal('hide');
 		 });
 	 }
-	 
-	 
+	
 	 var printPaging = function (pageMaker, target){
 		 var str = "";
 		 if (pageMaker.prev) {
@@ -174,7 +251,7 @@
 		 formObj.attr({'method':'get'});
 		 formObj.submit();
 	 });
-	 $('.btn-danger').on('click',function(){
+	 $('.btn-danger.list').on('click',function(){
 		 formObj.attr({'action':'/sboard/removePage'});
 		 formObj.submit();
 	 });
@@ -200,6 +277,8 @@
 		 $(".replyLi").remove();
 		 target.after(html);
 	 }
+	 
+ 
 	 
 	 
  </script>
